@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>数据表格</title>
+    <script src="lib/jquery-3.4.1/jquery-3.4.1.js"></script>
+    <link rel="stylesheet" href="lib/element2.13.0/lib-master/theme-chalk/index.css" />
+    <script src="lib/vue/vue.js" type="text/javascript" charset="utf-8"></script>
+    <script src="lib/layer/layer.js"></script>
+    <script src="lib/element2.13.0/lib-master/index.js"></script>
+    <script src="lib/web/data.js"></script>
+</head>
+<body>
+<!--<div id="app" style="display: block; margin: 0 auto; width: 50%;" >-->
+<div id="app" style="position: fixed;
+    top:50%;
+    left:50%;
+    transform: translate(-50%,-50%);
+    width: 30%;">
+    <el-form :model="ruleForm" status-icon :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+        <el-form-item label="账号" prop="count">
+            <el-input type="text" v-model="ruleForm.count" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="pass">
+            <el-input type="password" v-model="ruleForm.pass" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" @click="submitForm('ruleForm')">提交</el-button>
+            <el-button @click="resetForm('ruleForm')">重置</el-button>
+        </el-form-item>
+    </el-form>
+</div>
+</body>
+<script>
+    var Main = {
+        data() {
+            var checkCount = (rule, value, callback) => {
+                if (!value) {
+                    return callback(new Error('账号不能为空'));
+                }
+            };
+            var validatePass = (rule, value, callback) => {
+                if (value === '') {
+                    callback(new Error('请输入密码'));
+                }
+            };
+            return {
+                ruleForm: {
+                    pass: '',
+                    count: ''
+                },
+                rules: {
+                    count: [
+                        { validator: checkCount, trigger: 'blur' }
+                    ],
+                    pass: [
+                        { validator: validatePass, trigger: 'blur' }
+                    ]
+                }
+            };
+        },
+        methods: {
+            submitForm(formName) {
+                if (this.ruleForm.count == "admin" && this.ruleForm.pass == "123456")
+                    location.href= url+"/web/index.html";
+            },
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            }
+        }
+    }
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</html>

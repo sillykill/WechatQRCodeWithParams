@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<!--    <meta http-equiv="Content-Disposition" content="attachment;">-->
+<!--    <script src="../../lib/download/download.js"></script>-->
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+<script>
+    var x=new XMLHttpRequest();
+    x.open("GET", "http://47.106.147.209/diskjpg/2020-04-21_14:47:0129697.jpg", true);
+    x.responseType = 'blob';
+    x.onload=function(e){
+        var url = window.URL.createObjectURL(x.response)
+        var a = document.createElement('a');
+        a.href = url
+        a.download = ''
+        a.click()
+    }
+    x.send();
+</script>
+</html>

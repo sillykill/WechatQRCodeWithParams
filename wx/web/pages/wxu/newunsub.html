@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>店铺管理</title>
+    <script src="../../lib/jquery-3.4.1/jquery-3.4.1.js"></script>
+    <link rel="stylesheet" href="../../lib/element2.13.0/lib-master/theme-chalk/index.css" />
+    <script src="../../lib/vue/vue.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../../lib/layer/layer.js"></script>
+    <script src="../../lib/element2.13.0/lib-master/index.js"></script>
+    <script src="../../lib/axios/dist/axios.min.js"></script>
+    <script src="../../lib/web/data.js"></script>
+</head>
+<body>
+<div id="table">
+    <template>
+        <el-table
+                :data="tableData.slice((currentPage-1)*pagesize,currentPage*pagesize).filter(tableData => !search || tableData.nickname.toLowerCase().includes(search.toLowerCase()))"
+                :border="true"
+                :default-sort = "{prop: 'newsub', order: 'descending'}"
+                stripe
+        >
+            <el-table-column type="index" label="序号"  align="center" width="50">
+            </el-table-column>
+            <el-table-column prop="nickname" label="用户名称" sortable  align="center" width="120">
+            </el-table-column>
+            <el-table-column prop="sex" label="性别" sortable >
+            </el-table-column>
+            <el-table-column prop="ctime" label="创建时间" sortable>
+            </el-table-column>
+            <el-table-column prop="country" label="国家" sortable>
+            </el-table-column>
+            <el-table-column prop="province" label="省份" sortable>
+            </el-table-column>
+            <el-table-column prop="city" label="城市" sortable>
+            </el-table-column>
+            <el-table-column prop="subtime" label="关注时间" sortable>
+            </el-table-column>
+            <el-table-column prop="unsubtime" label="取关时间" sortable>
+            </el-table-column>
+            <el-table-column prop="state" label="关注状态" sortable>
+            </el-table-column>
+            <el-table-column prop="store" label="店铺名称" sortable :filters="storeN" :filter-method="filterstore">
+            </el-table-column>
+            <el-table-column fixed="right" align="center" label="操作" width="300">
+                <template slot="header" slot-scope="scope">
+                    <div style="padding-bottom: 10px;">
+                        <el-input
+                                v-model="search"
+                                size="mini"
+                                placeholder="输入关键字搜索"/>
+                    </div>
+                    <div>
+                        <el-button type="primary" round   @click="refreshtable()">刷新</el-button>
+<!--                        <el-button type="primary" round   @click="downCsv()">Excel数据</el-button>-->
+                    </div>
+                </template>
+                <template slot-scope="scope">
+                    <!--<el-button type="primary" @click="dialogTableVisible = true" icon="el-icon-view" circle size="mini"></el-button>-->
+                    <!--                    <el-button type="success" @click="dialogStoreNameChange = true" icon="el-icon-edit" circle size="mini"></el-button>-->
+                    <!--                    <el-button type="success" @click="getQrurl(scope.row)" icon="el-icon-picture-outline" circle size="mini" ></el-button>-->
+                    <!--                    <el-button type="danger" @click="removeStore(scope.row)" icon="el-icon-delete" circle size="mini"></el-button>-->
+                </template>
+            </el-table-column>
+        </el-table>
+    </template>
+
+    <!-- 分页 -->
+    <div class="block">
+        <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="currentPage"
+                       :page-sizes="[10, 25, 50, 100]" :page-size="10" layout="total, sizes, prev, pager, next, jumper" :total="total">
+        </el-pagination>
+    </div>
+
+
+
+</div>
+</body>
+<script>
+    var Main =new Vue({
+        el: '#table',
+        data() {
+            return {
+                total:100,//默认数据总数
+                pagesize:10,//每页的数据条数
+                currentPage:1,//默认开始页面
+                resizable:true,
+                dialogVisible: false,
+                dialogTableVisible: false,
+                dialogStoreNameChange: false,
+                search: '',
+                tableData: [],
+                ruleForm: {
+                    name: '',
+                    desc: ''
+                }
+            }
+        },
+        mounted:function(){
+            this.refreshstoreinfo();
+            this.refreshStoreName();
+        },
+        methods: {
+            //排序
+            formatter(row, column) {
+                return row.address;
+            },
+            //分页
+            handleCurrentChange:function(currentPage){
+                this.currentPage = currentPage;
+            },
+            handleSizeChange:function (pagesize) {
+                this.pagesize = pagesize;
+            },
+            //表单重置
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            },
+            //提示操作反馈
+            apeendsuccess() {
+                this.$notify({
+                    title: '成功',
+                    message: '操作成功',
+                    type: 'success',
+                    duration: '500'
+                });
+            },
+            appenderror(error) {
+                this.$notify.error({
+                    title: '错误',
+                    message: error,
+                    duration: '500'
+                });
+            },
+            //刷新店铺数据
+            refreshstoreinfo(){
+                var that = this;
+                axios.get(url+'/con/data/newUnSub.php', {
+                    params: {
+
+                    }
+                })
+                    .then(function (response) {
+                        if(response.data.state == 200){
+                            that.tableData = response.data.total;
+                            that.total = that.tableData.length;
+                        }else{
+
+                        }
+                    })
+                    .catch(function (error) {
+                        that.appenderror(error);
+                    });
+
+            },
+            //获取过滤
+            refreshStoreName(){
+                var that = this;
+                axios.get(url+'/con/data/filterStoreName.php', {
+                    params: {
+
+                    }
+                })
+                    .then(function (response) {
+                        if(response.data.state == 200){
+                            that.storeN = response.data.total;
+                        }else{
+
+                        }
+                    })
+                    .catch(function (error) {
+                        that.appenderror(error);
+                    });
+            },
+            refreshtable(){
+                this.apeendsuccess();
+                this.refreshstoreinfo();
+                this.refreshStoreName();
+            },
+            downCsv(){
+                var that = this;
+                var x=new XMLHttpRequest();
+                x.open("GET", url+"/con/data/neednewUnSub.php", true);
+                x.responseType = 'blob';
+                x.onload=function(e){
+                    var url = window.URL.createObjectURL(x.response)
+                    var a = document.createElement('a');
+                    a.href = url
+                    a.download = ''
+                    a.click()
+                }
+                x.send();
+            },
+            filterstore(value, row) {
+                return row.store === value;
+            }
+        },
+
+    });
+
+
+</script>
+</html>

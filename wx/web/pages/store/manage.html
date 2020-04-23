@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>店铺管理</title>
+    <script src="../../lib/jquery-3.4.1/jquery-3.4.1.js"></script>
+    <link rel="stylesheet" href="../../lib/element2.13.0/lib-master/theme-chalk/index.css" />
+    <script src="../../lib/vue/vue.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../../lib/layer/layer.js"></script>
+    <script src="../../lib/element2.13.0/lib-master/index.js"></script>
+    <script src="../../lib/axios/dist/axios.min.js"></script>
+    <script src="../../lib/web/data.js"></script>
+</head>
+<body>
+<div id="table">
+    <template>
+        <el-table
+                :data="tableData.slice((currentPage-1)*pagesize,currentPage*pagesize).filter(tableData => !search || tableData.touser.toLowerCase().includes(search.toLowerCase()))"
+                :border="true"
+                :default-sort = "{prop: 'newsub', order: 'descending'}"
+                stripe
+                >
+            <el-table-column type="index" label="序号"  align="center" width="50">
+            </el-table-column>
+            <el-table-column prop="touser" label="店铺名称" sortable  align="center" width="120">
+            </el-table-column>
+            <el-table-column  label="新粉丝"  width="120">
+                <el-table-column prop="newsub" label="关注" sortable >
+                </el-table-column>
+                <el-table-column prop="newunsub" label="取消" sortable>
+                </el-table-column>
+                <el-table-column prop="newnetsub" label="净关注" sortable>
+                </el-table-column>
+            </el-table-column>
+            <el-table-column label="老粉丝" width="120">
+                <el-table-column prop="oldsub" label="关注" sortable>
+                </el-table-column>
+                <el-table-column prop="oldunsub" label="取消" sortable>
+                </el-table-column>
+                <el-table-column prop="oldnetsub" label="净关注" sortable>
+                </el-table-column>
+            </el-table-column>
+            <el-table-column fixed="right" align="center" label="操作" width="400">
+                <template slot="header" slot-scope="scope">
+                    <div style="padding-bottom: 10px;">
+                        <el-input
+                                v-model="search"
+                                size="mini"
+                                placeholder="输入关键字搜索"/>
+                    </div>
+                    <div>
+                        <el-button type="primary" round  @click="dialogVisible = true">添加店铺</el-button>
+                        <el-button type="primary" round   @click="refreshtable()">刷新</el-button>
+<!--                        <el-button type="primary" round   @click="downCsv()">Excel数据</el-button>-->
+                    </div>
+                </template>
+                <template slot-scope="scope">
+                    <!--<el-button type="primary" @click="dialogTableVisible = true" icon="el-icon-view" circle size="mini"></el-button>-->
+<!--                    <el-button type="success" @click="dialogStoreNameChange = true" icon="el-icon-edit" circle size="mini"></el-button>-->
+                    <el-button type="success" @click="getQrurl(scope.row)" icon="el-icon-picture-outline" circle size="mini" ></el-button>
+                    <el-button type="danger" @click="removeStore(scope.row)" icon="el-icon-delete" circle size="mini"></el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </template>
+
+    <!-- 分页 -->
+    <div class="block">
+        <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="currentPage"
+                       :page-sizes="[10, 25, 50, 100]" :page-size="10" layout="total, sizes, prev, pager, next, jumper" :total="total">
+        </el-pagination>
+    </div>
+
+
+<!--    添加店铺-->
+    <el-dialog
+            title="添加"
+            :visible.sync="dialogVisible"
+            width="30%"
+            :modal="false">
+        <div id="formstore">
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+                <el-form-item label="店铺名称" prop="name">
+                    <el-input v-model="ruleForm.name"></el-input>
+                </el-form-item>
+                <el-form-item label="店铺描述" prop="descr">
+                    <el-input type="textarea" v-model="ruleForm.descr"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="submitForm('ruleForm')">立即创建</el-button>
+                    <el-button @click="resetForm('ruleForm')">重置</el-button>
+                    <el-button @click="dialogVisible = false">取 消</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </el-dialog>
+
+
+    <!-- 弹窗 -->
+    <el-dialog title="收货地址" :visible.sync="dialogTableVisible">
+        <el-table :data="tableData">
+            <el-table-column prop="touser" property="date" label="日期" width="150"></el-table-column>
+            <el-table-column property="name" label="姓名" width="200"></el-table-column>
+            <el-table-column property="address" label="地址"></el-table-column>
+        </el-table>
+    </el-dialog>
+
+
+    <!--    添加店铺-->
+    <el-dialog
+            title="添加"
+            :visible.sync="dialogStoreNameChange"
+            width="30%"
+            :modal="false">
+        <div id="modifyStore">
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+                <el-form-item label="店铺名称" prop="name">
+                    <el-input v-model="ruleForm.name"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="submitForm('ruleForm')">修改</el-button>
+                    <el-button @click="resetForm('ruleForm')">重置</el-button>
+                    <el-button @click="dialogVisible = false">取 消</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </el-dialog>
+
+    <!--    展示QR码-->
+    <el-dialog
+            title="二维码"
+            :visible.sync="dialogShowQR"
+            width="30%"
+            :modal="false">
+        <div id="dialogShowQRid">
+                <el-image :src="QRsrc">
+                    <div slot="placeholder" class="image-slot">
+                        加载中<span class="dot">...</span>
+                    </div>
+                </el-image>
+        </div>
+        <div align="center">
+            <el-button type="success" @click="downloadQROnce()" icon="el-icon-download"  circle size="mini"></el-button>
+        </div>
+    </el-dialog>
+
+</div>
+</body>
+<script>
+    var Main =new Vue({
+        el: '#table',
+        data() {
+            return {
+                total:100,//默认数据总数
+                pagesize:10,//每页的数据条数
+                currentPage:1,//默认开始页面
+                resizable:true,
+                dialogVisible: false,
+                dialogTableVisible: false,
+                dialogStoreNameChange: false,
+                dialogShowQR: false,
+                QRsrc: '',
+                search: '',
+                tableData: [],
+                ruleForm: {
+                    name: '',
+                    desc: ''
+                },
+                rules: {
+                    name: [
+                        { required: true, message: '请输入活动名称', trigger: 'blur' },
+                        { min: 1, max: 30, message: '长度在 1 到 30 个字符', trigger: 'blur' }
+                    ]
+                }
+            }
+        },
+        mounted:function(){
+            this.refreshstoreinfo();
+        },
+        methods: {
+            //排序
+            formatter(row, column) {
+                return row.address;
+            },
+            //分页
+            handleCurrentChange:function(currentPage){
+                this.currentPage = currentPage;
+            },
+            handleSizeChange:function (pagesize) {
+                this.pagesize = pagesize;
+            },
+            //表单提交
+            submitForm(formName) {
+                var that = this;
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        //请求
+                        axios.get(url+'/con/store/create.php', {
+                            params: {
+                                name: that.ruleForm.name,
+                                descr: that.ruleForm.descr
+                            }
+                            })
+                            .then(function (response) {
+                                if(response.data.state == 200){
+                                    that.apeendsuccess();
+                                    //刷新数据
+                                    //刷新数据
+                                    that.refreshstoreinfo();
+                                }else{
+                                    that.appenderror(response.data.msg);
+                                }
+                            })
+                            .catch(function (error) {
+                                that.appenderror(error);
+                            });
+
+                        //响应掉呀
+                        that.dialogVisible = false;
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            },
+            //
+
+            //表单重置
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            },
+            //提示操作反馈
+            apeendsuccess() {
+                this.$notify({
+                    title: '成功',
+                    message: '操作成功',
+                    type: 'success',
+                    duration: '500'
+                });
+            },
+            appenderror(error) {
+                this.$notify.error({
+                    title: '错误',
+                    message: error,
+                    duration: '500'
+                });
+            },
+            //刷新店铺数据
+            refreshstoreinfo(){
+                var that = this;
+                axios.get(url+'/con/store/findtotal.php', {
+                    params: {
+
+                    }
+                    })
+                    .then(function (response) {
+                        if(response.data.state == 200){
+                            // console.log(response.data);
+                            that.tableData = response.data.total;
+                            that.total = that.tableData.length;
+                            // console.log("refreshstoreinfo",that.tableData);
+                        }else{
+                            // that.appenderror(response.data.msg);
+                        }
+                    })
+                    .catch(function (error) {
+                        that.appenderror(error);
+                    });
+
+            },
+            getQrurl(row){
+                this.scene = row.scene;
+                this.QRsrc = "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket="+row.ticket;
+                this.dialogShowQR = true;
+            },
+            removeStore(row){
+                var that = this;
+                axios.get(url+'/con/store/remove.php', {
+                    params: {
+                        scene: row.scene,
+                    }
+                })
+                    .then(function (response) {
+                        if(response.data.state == 200){
+                            that.refreshstoreinfo();
+                            that.apeendsuccess();
+                        }else{
+                            that.appenderror(response.data.msg);
+                            // that.appenderror(response.data.msg);
+                        }
+                    })
+                    .catch(function (error) {
+                        that.appenderror(error);
+                    });
+            },
+            refreshtable(){
+                this.apeendsuccess();
+                this.refreshstoreinfo();
+            },
+            downloadQROnce(){
+                var that = this;
+                var x=new XMLHttpRequest();
+                x.open("GET", url+"/diskjpg/"+that.scene+".jpg", true);
+                x.responseType = 'blob';
+                x.onload=function(e){
+                    var url = window.URL.createObjectURL(x.response)
+                    var a = document.createElement('a');
+                    a.href = url
+                    a.download = ''
+                    a.click()
+                }
+                x.send();
+            },
+            downCsv(){
+                var that = this;
+                var x=new XMLHttpRequest();
+                x.open("GET", url+"/con/store/needACsv.php", true);
+                x.responseType = 'blob';
+                x.onload=function(e){
+                    var url = window.URL.createObjectURL(x.response)
+                    var a = document.createElement('a');
+                    a.href = url
+                    a.download = ''
+                    a.click()
+                }
+                x.send();
+            }
+
+        },
+
+    });
+
+
+</script>
+</html>

@@ -1,0 +1,41 @@
+{
+	"navs": [{
+		"title": "店铺",
+		"icon": "el-icon-s-shop",
+		"href": "#",
+		"id": "1",
+		"children": [{
+			"title": "店铺管理",
+			"icon": "el-icon-s-shop",
+			"href": "pages/store/manage.html",
+			"id": "1-2"
+		}]
+	}, {
+		"title": "用户详细",
+		"icon": "el-icon-user-solid",
+		"href": "#",
+		"id": "2",
+		"children": [{
+			"title": "新用户关注",
+			"icon": "el-icon-s-order",
+			"href": "pages/wxu/newsub.html",
+			"id": "2-1"
+		},{
+			"title": "新用户取关",
+			"icon": "el-icon-s-order",
+			"href": "pages/wxu/newunsub.html",
+			"id": "2-2"
+		},{
+			"title": "老用户关注",
+			"icon": "el-icon-s-order",
+			"href": "pages/wxu/oldsub.html",
+			"id": "2-3"
+		},{
+			"title": "老用户取关",
+			"icon": "el-icon-s-order",
+			"href": "pages/wxu/oldunsub.html",
+			"id": "2-4"
+		}]
+	}
+	]
+}
